@@ -1,0 +1,15 @@
+name: test_workflow
+
+on: [push, pull_request]
+
+jobs:
+    test_job:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        
+        # Add the step to install dependencies
+        - name: Install dependencies
+          run: pip install .
+
+        - run: pytest test/

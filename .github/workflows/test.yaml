@@ -3,13 +3,20 @@ name: test_workflow
 on: [push, pull_request]
 
 jobs:
-    test_job:
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v3
+  test_job:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+    steps:
+      - uses: actions/checkout@v3
         
-        # Add the step to install dependencies
-        - name: Install dependencies
-          run: pip install .
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
 
-        - run: pytest test/
+      - name: Install dependencies
+        run: pip install .
+
+      - run: pytest test/

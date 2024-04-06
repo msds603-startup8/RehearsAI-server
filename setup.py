@@ -11,7 +11,11 @@ setup(
     packages=find_packages(),
     install_requires=[
         "pytest",
-        # "jina==3.25.0"
+        "openai-whisper==20231117",
+        "langchain-openai==0.1.1",
+        "jina==3.25.0",
+        "docarray[audio]"
+
     ],
     python_requires='==3.9.*'
 )

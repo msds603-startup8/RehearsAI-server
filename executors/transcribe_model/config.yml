@@ -1,0 +1,8 @@
+jtype: TranscribeModel
+py_modules:
+  - executor.py
+metas:
+  name: TranscribeModel
+  description: TranscribeModel takes voice data autput the transcribed text.
+  url: 
+  keywords: ['transcribe']

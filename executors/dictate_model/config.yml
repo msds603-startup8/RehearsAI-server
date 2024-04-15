@@ -1,0 +1,8 @@
+jtype: DictateModel
+py_modules:
+  - executor.py
+metas:
+  name: DictateModel
+  description: DictateModel takes interviewer's answer as text and dictate into voice.
+  url: 
+  keywords: ['dictate']

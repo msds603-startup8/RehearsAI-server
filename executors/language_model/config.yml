@@ -1,0 +1,8 @@
+jtype: LanguageModel
+py_modules:
+  - executor.py
+metas:
+  name: LanguageModel
+  description: LanguageModel takes interviewee's answer and understand it. Then it generates follow-up question or the next question.
+  url: 
+  keywords: ['LLM']

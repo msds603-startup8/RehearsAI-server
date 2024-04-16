@@ -1,0 +1,4 @@
+jina==3.25.0
+docarray[audio]==0.40.0
+streamlit==1.33.0
+audio-recorder-streamlit==0.0.8

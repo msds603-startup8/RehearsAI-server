@@ -1,4 +1,4 @@
-jtype: TranscribeModel
+jtype: WhisperAPI
 py_modules:
   - executor.py
 metas:

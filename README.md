@@ -24,7 +24,7 @@ On the top of running the model server, you can also run the web server and let 
 ## Run the streamlit web server in docker container
 ```bash
 docker build -t web_server web
-docker run web_server -- --host host.docker.internal
+docker run -p 8080:8080 web_server -- --host host.docker.internal
 ```
 
 ## Run the streamlit web server in localhost

@@ -1,0 +1,8 @@
+jtype: OpanAISummarization
+py_modules:
+  - executor.py
+metas:
+  name: OpanAISummarization
+  description: OpanAISummarization takes text data and summarize it.
+  url: 
+  keywords: ['summarization']

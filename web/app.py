@@ -17,19 +17,15 @@ args = parser.parse_args()
 
 client = Client(host=args.host, port=12345)
 
-def main():
-    st.header("Upload PDF")
-    pdf = st.file_uploader("Upload your PDF", type = 'pdf')
-    if pdf is not None: # Added missing if statement
-        pdf_reader = PdfReader(pdf)
 
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        #st.write(text)
+st.header("Upload PDF")
+pdf = st.file_uploader("Upload your PDF", type = 'pdf')
+if pdf is not None:
+    pdf_reader = PdfReader(pdf)
 
-if __name__ == '__main__':
-    main()
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
 
 
 st.title("RehearsAI Testing: Talking Voice Assistant")

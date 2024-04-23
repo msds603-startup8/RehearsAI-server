@@ -5,6 +5,8 @@ import argparse
 from jina import Client
 from docarray import DocList
 from docarray.documents import AudioDoc
+from PyPDF2 import PdfReader
+
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
@@ -14,6 +16,21 @@ parser.add_argument('--host', default='0.0.0.0', required=False, help='The host 
 args = parser.parse_args()
 
 client = Client(host=args.host, port=12345)
+
+def main():
+    st.header("Upload PDF")
+    pdf = st.file_uploader("Upload your PDF", type = 'pdf')
+    if pdf is not None: # Added missing if statement
+        pdf_reader = PdfReader(pdf)
+
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+        #st.write(text)
+
+if __name__ == '__main__':
+    main()
+
 
 st.title("RehearsAI Testing: Talking Voice Assistant")
 

@@ -1,4 +1,4 @@
-jtype: LanguageModel
+jtype: OpenAISingleTurnLanguageModel
 py_modules:
   - executor.py
 metas:

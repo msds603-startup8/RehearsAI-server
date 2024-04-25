@@ -5,14 +5,26 @@ from jina import Executor, requests
 from docarray import DocList
 from docarray.documents import TextDoc
 
+from typing import List, Dict
+from docarray import BaseDoc
+from docarray.typing import AudioBytes
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
 
+class Dialog(BaseDoc):
+    interviewee_speech_bytes: AudioBytes = None
+    chat_history: List[str] = None
+    interviewee_text: str = None
+    interviewer_text: str = None
+    interviewer_speech_bytes: AudioBytes = None
+    metadata: Dict = None
+
 openai_api_key = os.environ["OPENAI_API_KEY"]
 
-class LanguageModel(Executor):
+class OpenAISingleTurnLanguageModel(Executor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5, openai_api_key=openai_api_key)
@@ -30,11 +42,8 @@ class LanguageModel(Executor):
         )
 
     @requests
-    async def generate(self, docs: DocList[TextDoc], **kwargs) -> DocList[TextDoc]:
-        print("LanguageModel called")
+    async def task(self, doc: Dialog, **kwargs) -> Dialog:
         chain = self.prompt | self.model
-        result = chain.invoke({'input': docs[0].text})
-        responses = DocList[TextDoc]()
-        response = TextDoc(text=result.content)
-        responses.append(response)
-        return responses
+        result = chain.invoke({'input': doc.interviewee_text})
+        response = Dialog(interviewer_text=result.content)
+        return response

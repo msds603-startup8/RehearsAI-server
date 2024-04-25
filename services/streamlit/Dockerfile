@@ -3,6 +3,5 @@ FROM jinaai/jina:${JINA_VERSION}
 EXPOSE 8080
 WORKDIR /app
 COPY . ./
-RUN apt update && apt -y install ffmpeg
 RUN pip install -r requirements.txt
 ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]

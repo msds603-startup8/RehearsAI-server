@@ -49,7 +49,7 @@ export OPENAI_API_KEY=...
 
 - Run the streamlit server & fastapi server
 ```bash
-(streamlit - web) streamlit run ./services/app.py
+(streamlit - web) streamlit run ./services/streamlit/app.py
 (fastapi - model) uvicorn services.fastapi.app:app --port 8000
 ```
 

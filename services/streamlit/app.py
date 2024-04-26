@@ -2,34 +2,22 @@ import sys
 import os
 import base64
 import argparse
+
+import requests
+
 from typing import List, Dict
-
-from jina import Client
-from docarray.documents import TextDoc
-from docarray import BaseDoc
-from docarray.typing import AudioBytes
-
 from PyPDF2 import PdfReader
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
 
-class Dialog(BaseDoc):
-    interviewee_speech_bytes: AudioBytes = None
-    chat_history: List[str] = None
-    interviewee_text: str = None
-    interviewer_text: str = None
-    interviewer_speech_bytes: AudioBytes = None
-    metadata: Dict = None
-
 parser = argparse.ArgumentParser(description='Example script with a host argument')
 parser.add_argument('--host', default='0.0.0.0', required=False, help='The host address to connect to')
 args = parser.parse_args()
 
-client = Client(host=args.host, port=12345)
-
 def autoplay_audio(data):
+    # https://discuss.streamlit.io/t/how-to-play-an-audio-file-automatically-generated-using-text-to-speech-in-streamlit/33201/2
     b64 = base64.b64encode(data).decode()
     md = f"""
         <div style="display: none;">
@@ -70,10 +58,9 @@ if st.session_state.page == 'conversation':
 
     audio_bytes = audio_recorder()
     if audio_bytes:
-        response = client.post(on='/',
-            inputs=Dialog(
-                interviewee_speech_bytes=AudioBytes(audio_bytes)
-            ),
-            return_type=Dialog
+        response = requests.post(
+            f"http://{args.host}:8000/answer",
+            data=audio_bytes,
+            headers={'Content-Type': 'application/octet-stream'}
         )
-        autoplay_audio(response.interviewer_speech_bytes)
+        autoplay_audio(response.content)

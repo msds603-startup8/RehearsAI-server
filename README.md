@@ -35,23 +35,48 @@
     ├── 📄 app.py
     └── 📄 requirements.txt
 ```
-
-## Quick Start
-Currently, you can run the model server locally only in docker containers.
-Entry point for the server is `0.0.0.0:12345`.
-
-### Run the model server in docker containers
-
-- Install docker
-https://docs.docker.com/engine/install/
-
+## Quick Start (In Local Environment)
 - Set-up openai-api-key
 ```bash
 export OPENAI_API_KEY=...
 ```
 
-- Set-up docker images for the models and run the server
+- Install required package and library
 ```bash
-./run_demo.sh
+(streamlit - web) pip install -r ./services/streamlit/requirements.txt
+(fastapi - model) pip install -r ./services/fastapi/requirement.txt
+```
+
+- Run the streamlit server & fastapi server
+```bash
+(streamlit - web) streamlit run ./services/app.py
+(fastapi - model) uvicorn services.fastapi.app:app --port 8000
+```
+
+## Quick Start (In Docker Container)
+
+- Install docker
+https://docs.docker.com/engine/install/
+
+- Set-up docker images
+```bash
+docker build --no-cache \
+    -t streamlit \
+    -f ./services/streamlit/Dockerfile \
+    ./services/streamlit
+
+docker build --no-cache \
+    -t fastapi \
+    -f ./services/fastapi/Dockerfile \
+    ./services/fastapi
+```
+
+- Run the web & model server
+```bash
+# Run fastapi server
+docker run -e "OPENAI_API_KEY={your_openai_api_key}" -p 8000:8000 fastapi
+
+# Run streamlit server
+docker run -e "OPENAI_API_KEY={your_openai_api_key}" -p 8080:8080 streamlit -- --host host.docker.internal
 # Now you can see the demo at http://0.0.0.0:8080
 ```

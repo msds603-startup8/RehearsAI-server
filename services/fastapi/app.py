@@ -1,10 +1,4 @@
 import os
-import io
-import base64
-
-import numpy as np
-
-from typing import Annotated
 
 from openai import OpenAI
 
@@ -13,7 +7,7 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
 from fastapi.responses import FileResponse
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends
 
 
 openai_api_key = os.environ["OPENAI_API_KEY"]
@@ -34,9 +28,6 @@ answer_prompt = ChatPromptTemplate(messages=
         ),
     ]
 )
-
-from fastapi import FastAPI, Request, Depends
-from pydantic import BaseModel
 
 async def parse_body(request: Request):
     data: bytes = await request.body()

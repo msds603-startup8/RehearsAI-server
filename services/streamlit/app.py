@@ -1,5 +1,3 @@
-import sys
-import os
 import base64
 import argparse
 
@@ -15,20 +13,6 @@ from audio_recorder_streamlit import audio_recorder
 parser = argparse.ArgumentParser(description='Example script with a host argument')
 parser.add_argument('--host', default='0.0.0.0', required=False, help='The host address to connect to')
 args = parser.parse_args()
-
-def autoplay_audio(data):
-    # https://discuss.streamlit.io/t/how-to-play-an-audio-file-automatically-generated-using-text-to-speech-in-streamlit/33201/2
-    md = f"""
-        <div style="display: none;">
-            <audio controls autoplay="true">
-            <source src="data:audio/mp3;base64,{data}" type="audio/mp3">
-            </audio>
-        </div>
-        """
-    st.markdown(
-        md,
-        unsafe_allow_html=True,
-    )
 
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
@@ -55,8 +39,6 @@ if st.session_state.page == 'input':
 # Page for conversation with virtual assistant
 if st.session_state.page == 'conversation':
     st.title("RehearsAI Testing: Talking Voice Assistant")
-    # st.write("PDF Text Extracted: ", st.session_state.pdf_text)
-    # st.write("Job Description: ", st.session_state.jd)
 
     audio_bytes = audio_recorder()
     if audio_bytes:

@@ -4,13 +4,10 @@ from typing import List
 
 from openai import OpenAI
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
-
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
-from fastapi.responses import FileResponse
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI
 
 from pydantic import BaseModel
 
@@ -18,6 +15,7 @@ from pydantic import BaseModel
 openai_api_key = os.environ["OPENAI_API_KEY"]
 
 app = FastAPI()
+
 openai_client = OpenAI(api_key=openai_api_key)
 langchain_client = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5, openai_api_key=openai_api_key)
 
@@ -43,6 +41,12 @@ class InterviewContext(BaseModel):
 
 @app.post("/answer")
 async def interview(context: InterviewContext):
+    """Based on the context (chat_history, resume, job description, questions, interviewee's audio reponse),
+    answer in audio.
+
+    Returns:
+        dict: with two keys (interviewer_audio_data, dialog)
+    """
     # Save audio bytes to audio file
     input_path = os.path.join("/tmp", "interviewee_speech.mp3")
     with open(input_path, "wb") as file:

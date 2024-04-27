@@ -18,11 +18,10 @@ args = parser.parse_args()
 
 def autoplay_audio(data):
     # https://discuss.streamlit.io/t/how-to-play-an-audio-file-automatically-generated-using-text-to-speech-in-streamlit/33201/2
-    b64 = base64.b64encode(data).decode()
     md = f"""
         <div style="display: none;">
             <audio controls autoplay="true">
-            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            <source src="data:audio/mp3;base64,{data}" type="audio/mp3">
             </audio>
         </div>
         """
@@ -30,6 +29,9 @@ def autoplay_audio(data):
         md,
         unsafe_allow_html=True,
     )
+
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
 
 # Initialize session state
 if 'page' not in st.session_state:
@@ -60,7 +62,16 @@ if st.session_state.page == 'conversation':
     if audio_bytes:
         response = requests.post(
             f"http://{args.host}:8000/answer",
-            data=audio_bytes,
-            headers={'Content-Type': 'application/octet-stream'}
+            json={
+                "interviewee_audio_data": base64.b64encode(audio_bytes).decode('utf-8'),
+                "chat_history": st.session_state.chat_history 
+            },
+            headers={'Content-Type': 'application/json'}
         )
-        autoplay_audio(response.content)
+
+        response_data = response.json()
+        interviewer_audio_data = response_data['interviewer_audio_data']
+        dialog = response_data['dialog']
+        st.session_state.chat_history.extend(dialog)
+        audio_bytes = base64.b64decode(interviewer_audio_data.encode('utf-8'))
+        st.audio(audio_bytes)

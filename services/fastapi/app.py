@@ -1,6 +1,6 @@
 import os
 import base64
-from typing import List
+from typing import List, Tuple
 
 from openai import OpenAI
 
@@ -34,7 +34,7 @@ answer_prompt = ChatPromptTemplate.from_messages(
 
 class InterviewContext(BaseModel):
     interviewee_audio_data: str
-    chat_history: List[str] = None
+    chat_history: List[Tuple[str, str]] = None
     resume: str = None
     job_description: str = None
     questions: List[str] = None
@@ -64,12 +64,7 @@ async def interview(context: InterviewContext):
     
     # Language Model
     chain = answer_prompt | langchain_client
-    history = [
-         ('human', context.chat_history[i]) if i % 2 == 0
-         else  ('ai', context.chat_history[i])
-         for i in range(len(context.chat_history))
-    ]
-    interviewer_text = chain.invoke({'input': interviewee_text, 'chat_history': history}).content
+    interviewer_text = chain.invoke({'input': interviewee_text, 'chat_history': context.chat_history}).content
 
     # Dictate Model
     output_path = os.path.join("/tmp", "speech.mp3")
@@ -84,5 +79,5 @@ async def interview(context: InterviewContext):
         base64_audio_bytes = base64.b64encode(audio_file.read()).decode('utf-8')
         return {
             "interviewer_audio_data" : base64_audio_bytes,
-            "dialog" : [interviewee_text, interviewer_text]
+            "dialog" : [('human', interviewee_text), ('ai', interviewer_text)]
         }

@@ -44,7 +44,7 @@ export OPENAI_API_KEY=...
 - Install required package and library
 ```bash
 (streamlit - web) pip install -r ./services/streamlit/requirements.txt
-(fastapi - model) pip install -r ./services/fastapi/requirement.txt
+(fastapi - model) pip install -r ./services/fastapi/requirements.txt
 ```
 
 - Run the streamlit server & fastapi server

@@ -41,16 +41,20 @@
 export OPENAI_API_KEY=...
 ```
 
-- Install required package and library
+- Prepare two conda environments
+    - streamlit
+    - fastapi
+
+- Install required package and library in each conda environment
 ```bash
-(streamlit - web) pip install -r ./services/streamlit/requirements.txt
-(fastapi - model) pip install -r ./services/fastapi/requirements.txt
+(streamlit) pip install -r ./services/streamlit/requirements.txt
+(fastapi) pip install -r ./services/fastapi/requirements.txt
 ```
 
 - Run the streamlit server & fastapi server
 ```bash
-(streamlit - web) streamlit run ./services/streamlit/app.py
-(fastapi - model) uvicorn services.fastapi.app:app --port 8000
+(streamlit) streamlit run ./services/streamlit/app.py
+(fastapi) uvicorn services.fastapi.app:app --port 8000
 ```
 
 ## Quick Start (In Docker Container)

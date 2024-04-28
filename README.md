@@ -17,6 +17,10 @@
 │   └── test_example.py
 ```
 
+## Demo
+https://github.com/msds603-startup8/RehearsAI-server/assets/137837017/f50e774e-0ea1-416e-8b0b-52002fa40394
+
+
 ## Quick Start
 ### Local Environment Setup
 1) Set Up OpenAI API Key:

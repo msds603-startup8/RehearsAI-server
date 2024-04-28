@@ -30,6 +30,10 @@ app = FastAPI()
 openai_client = OpenAI(api_key=openai_api_key)
 langchain_model = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5, openai_api_key=openai_api_key)
 
+class InterviewContext(BaseModel):
+    resume_text: str
+    job_description: str
+
 questions_template_zero_shot="""
 You are a helpful assistant tasked with creating interview questions for a data science position. Below is the resume of the candidate:
 
@@ -42,42 +46,42 @@ and this is the job description:
 Please generate 10 interview questions based on the resume provided:
 - 5 technical questions focusing on the candidate’s expertise and experience with specific technologies, methodologies, and projects.
 - 5 behavioral questions that explore how the candidate handles professional situations, including teamwork, leadership, and problem-solving.
-
-Please format your output in JSON as follows:
-{{
-  "technical_questions": [
-    "Technical Question 1",
-    "Technical Question 2",
-    "Technical Question 3",
-    "Technical Question 4",
-    "Technical Question 5"
-  ],
-  "behavioral_questions": [
-    "Behavioral Question 1",
-    "Behavioral Question 2",
-    "Behavioral Question 3",
-    "Behavioral Question 4",
-    "Behavioral Question 5",
-  ]
-}}
 """
+
 system_message_content = """
-You are a professional interviewer in the tech domain. You have the interviewee's resume and the job description:
+You are a professional interviewer in tech domain including data scientist, data engineering, 
+machine learning engineer, data analyist, software engineer.
+You are going to start with an opening and ask interviewee to introduce themselves. 
+After that, you are trying to understand the interviewee's answer,
+and give follow-up questions or the next question. 
+
+You have the interviewee's resume and the job description:
 - Job Description: {job_description}
 - Resume Highlights: {resume_highlights}
 
-Start by asking the interviewee to introduce themselves. Use the information provided to ask relevant 
-follow-up questions based on their responses.
+Also note that after a followup question you may choose to ask a new question.
+
+Use the conversation history of the interview to make a followup question:
+
+{conversation_history}
+
+Start by asking the interviewee to introduce themselves. Use the information provided in the Job description and resume
+to ask relevant follow-up questions based on their responses. Also, you may decide to ask a new question after a few 
+followup questions, but don't ask more than 3 followup question, hence please annotate a followup question and new question.
+Stick only to the list of questions when asking a new questions as shown below:
+
+{questions}
+
+You may ask technical or a behavioral question, but it should be akin to natural human conversation.
 """
 
-prompt_template = """
-You are a helpful assistant simulating an interview for a data science position. 
-Remember the previous conversation and continue the interview based on the context and also answer the questions.
+conversation_history = ""
 
-Previous conversation: {previous_conversation}
-Current question: {input}
+user_data = {}
 
-Assistant: """
+summarised_user_data = {}
+
+questions = {}
 
 # answer_prompt = ChatPromptTemplate(messages=
 #     [
@@ -116,18 +120,16 @@ def summarize_text_resume(text, model="gpt-3.5-turbo"):
         )
     return response
 
-def format_input_with_history(chat_history, new_user_input):
+def update_conversation_history(conversation_history, new_message, speaker):
     """
-    Formats the input for the model by including the chat history.
+    Update the conversation history string with the new message.
     """
-    history_text = "\n".join([f"{entry['role'].capitalize()}: {entry['content']}" for entry in chat_history])
-    return f"{history_text}\nUser: {new_user_input}"
+    return f"{conversation_history}\n{speaker}: {new_message}"
 
-def initialize_prompt(job_description, resume):
+def answer_prompt(job_description, resume):
     """
-    Function initializes the prompt
+    Function to create an answer prompt
     """
-
     job_summary = summarize_text_job_desc(job_description, langchain_model, openai_api_key)
     resume_summary = summarize_text_resume(resume, langchain_model, openai_api_key)
 
@@ -137,18 +139,9 @@ def initialize_prompt(job_description, resume):
             SystemMessage(content=system_message_content.format(
                 job_description=job_summary,
                 resume_highlights=resume_summary
-            )),
-            HumanMessage(content="{input}")
+            ))
         ]
     )
-
-async def parse_body(request: Request):
-    data: bytes = await request.body()
-    return data
-
-class InterviewContext(BaseModel):
-    resume_text: str
-    job_description: str
 
 def create_questions(resume:str, job_description:str):
      """Method to make question using resume and job description calling the openai api"""
@@ -175,10 +168,20 @@ def create_questions(resume:str, job_description:str):
 def init_session(context: InterviewContext):
     if not context.resume_text or not context.job_description:
         raise HTTPException(status_code=400, detail="Empty resume or job description provided.")
-    # Process the context data here, e.g., store in a database, log, etc.
-    questions = create_questions(context.resume_text, context.job_description)
-    answer_prompt = initialize_prompt(job_description=context.job_description, resume=context.resume_text)
+
+    user_data['resume'] = context.resume_text
+    user_data['job_desc'] = context.job_description
+
+    summarised_user_data['resume'] = summarize_text_resume(context.resume_text)
+    summarised_user_data['job_desc'] = summarize_text_job_desc(context.job_description)
+
+    questions['questions'] = create_questions(resume=context.resume_text, job_description=context.job_description)
+    
     return JSONResponse(status_code=200, content={"status": "success", "message": "Session initialized with provided data."})
+
+async def parse_body(request: Request):
+    data: bytes = await request.body()
+    return data
 
 @app.post("/answer")
 async def interview(data: bytes = Depends(parse_body)):
@@ -189,6 +192,11 @@ async def interview(data: bytes = Depends(parse_body)):
 
     interviewee_audio_file = open(input_path, "rb")
 
+    global conversation_history
+    
+    conversation_history = update_conversation_history(conversation_history=conversation_history, \
+                                                       new_message=interviewee_text, speaker="Interviwee")
+
     # Transcribe Model
     interviewee_text = openai_client.audio.transcriptions.create(
             model="whisper-1", 
@@ -196,9 +204,15 @@ async def interview(data: bytes = Depends(parse_body)):
             language="en"
     ).text
     
+    answer_prompt = answer_prompt(questions=questions["questions"],
+                                  conversation_history=conversation_history)
+    
     # Language Model
     chain = answer_prompt | langchain_model
-    interviewer_text = chain.invoke({'input': interviewee_text}).content
+    interviewer_text = chain.invoke({'input': conversation_history}).content
+
+    conversation_history = update_conversation_history(conversation_history=conversation_history, \
+                                                       new_message=interviewer_text, speaker="Interviewer")
 
     # Dictate Model
     output_path = os.path.join("/tmp", "speech.mp3")

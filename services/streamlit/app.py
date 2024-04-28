@@ -2,8 +2,10 @@ import base64
 import argparse
 
 import requests
+import json
 
 from typing import List, Dict
+from docarray import BaseDoc
 from PyPDF2 import PdfReader
 
 import streamlit as st
@@ -13,6 +15,10 @@ from audio_recorder_streamlit import audio_recorder
 parser = argparse.ArgumentParser(description='Example script with a host argument')
 parser.add_argument('--host', default='0.0.0.0', required=False, help='The host address to connect to')
 args = parser.parse_args()
+
+class InterviewContext(BaseDoc):
+    resume_text: str = None
+    job_description: str = None
 
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
@@ -52,7 +58,7 @@ if st.session_state.page == 'input':
     st.header("Upload PDF and Enter Job Description")
     resume = st.file_uploader("Upload your PDF", type='pdf')
     jd = st.text_area('Copy and paste job description.')
-    
+
     if st.button('Start Session'):
         resume_text = ""
         if resume is not None:
@@ -61,7 +67,26 @@ if st.session_state.page == 'input':
                 resume_text += page.extract_text() or " "  # Handle pages with no text
         st.session_state.resume_summary = send_for_summarization_resume(resume_text)
         st.session_state.jd_summary = send_for_summarization_jd(jd)
-        st.session_state.page = 'conversation'
+
+        interview_context_data = {
+            "resume_text": st.session_state.resume,
+            "job_description": st.session_state.jd
+        }
+
+        # Send InterviewContext to the server
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(
+            f"http://{args.host}:8000/create_question",
+            data=json.dumps(interview_context_data),
+            headers=headers
+        )
+        
+        if response.ok:
+            st.session_state.page = 'conversation'
+            st.success("Session started successfully!")
+            st.session_state.ques=response
+        else:
+            st.error("Failed to start session.")
 
 
 # Page for conversation with virtual assistant
@@ -74,7 +99,10 @@ if st.session_state.page == 'conversation':
             f"http://{args.host}:8000/answer",
             json={
                 "interviewee_audio_data": base64.b64encode(audio_bytes).decode('utf-8'),
-                "chat_history": st.session_state.chat_history 
+                "chat_history": st.session_state.chat_history,
+                "job_desc_summary": st.session_state.jd_summary,
+                "resume_summary": st.session_state.resume,
+                "questions": st.session_state.ques
             },
             headers={'Content-Type': 'application/json'}
         )

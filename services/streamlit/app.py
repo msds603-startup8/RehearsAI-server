@@ -81,10 +81,6 @@ if st.session_state.page == 'input':
 # Page for conversation with virtual assistant
 if st.session_state.page == 'conversation':
     st.title("RehearsAI Testing: Talking Voice Assistant")
-    st.subheader("Summarized Job Description:")
-    st.write(st.session_state.jd_summary)
-    st.subheader("Summarized PDF Text:")
-    st.write(st.session_state.resume_summary)
 
     audio_bytes = audio_recorder()
     if audio_bytes:

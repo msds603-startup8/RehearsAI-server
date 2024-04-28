@@ -11,6 +11,16 @@ from fastapi import FastAPI
 
 from pydantic import BaseModel
 
+from langchain.chains import LLMChain
+from langchain import PromptTemplate
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+import uvicorn
+
+from fastapi import FastAPI, Request, Depends
+from pydantic import BaseModel
 
 openai_api_key = os.environ["OPENAI_API_KEY"]
 
@@ -38,6 +48,7 @@ class InterviewContext(BaseModel):
     resume: str = None
     job_description: str = None
     questions: List[str] = None
+
 
 @app.post("/answer")
 async def interview(context: InterviewContext):
@@ -81,3 +92,36 @@ async def interview(context: InterviewContext):
             "interviewer_audio_data" : base64_audio_bytes,
             "dialog" : [('human', interviewee_text), ('ai', interviewer_text)]
         }
+
+
+
+class SummarizeRequest(BaseModel):
+    text: str
+
+
+@app.post("/summarize_resume")
+def summarize_resume(request: SummarizeRequest):
+    prompt_template = """Write a concise summary of following resume. Try to mainly focus on work experience (Employment) and projects:
+    "{text}"
+    CONCISE SUMMARY:"""
+    prompt=PromptTemplate(
+    input_variables=['text'],
+    template=prompt_template
+)
+    llm_chain=LLMChain(llm=langchain_client, prompt=prompt)
+    summary=llm_chain.run({'text':request.text})
+    return {"summary": summary}
+
+
+@app.post("/summarize_jd")
+def summarize_jd(request: SummarizeRequest):
+    prompt_template = """Write a concise summary of following job description:
+    "{text}"
+    CONCISE SUMMARY:"""
+    prompt=PromptTemplate(
+    input_variables=['text'],
+    template=prompt_template
+)
+    llm_chain=LLMChain(llm=langchain_client, prompt=prompt)
+    summary=llm_chain.run({'text':request.text})
+    return {"summary": summary}

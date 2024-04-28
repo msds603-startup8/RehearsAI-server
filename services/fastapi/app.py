@@ -72,3 +72,78 @@ async def interview(data: bytes = Depends(parse_body)):
             stt_response.stream_to_file(output_path)
 
     return FileResponse(output_path)
+
+
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+import uvicorn
+
+app = FastAPI()
+
+class SummarizeRequest(BaseModel):
+    text: str
+
+from langchain.chains import LLMChain
+from langchain import PromptTemplate
+
+
+
+@app.post("/summarize_resume")
+def summarize_resume(request: SummarizeRequest):
+    prompt_template = """Write a concise summary of following resume. Try to mainly focus on work experience (Employment) and projects:
+    "{text}"
+    CONCISE SUMMARY:"""
+    prompt=PromptTemplate(
+    input_variables=['text'],
+    template=prompt_template
+)
+    complete_prompt=prompt.format(text=request.text)
+    llm=ChatOpenAI(model_name='gpt-3.5-turbo')
+    llm_chain=LLMChain(llm=llm,prompt=prompt)
+    summary=llm_chain.run({'text':request.text})
+    return {"summary": summary}
+
+
+@app.post("/summarize_jd")
+def summarize_jd(request: SummarizeRequest):
+    prompt_template = """Write a concise summary of following job description:
+    "{text}"
+    CONCISE SUMMARY:"""
+    prompt=PromptTemplate(
+    input_variables=['text'],
+    template=prompt_template
+)
+    complete_prompt=prompt.format(text=request.text)
+    llm=ChatOpenAI(model_name='gpt-3.5-turbo')
+    llm_chain=LLMChain(llm=llm,prompt=prompt)
+    summary=llm_chain.run({'text':request.text})
+    return {"summary": summary}
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# @app.post("/summarization")
+# async def summarization(self, docs: DocList[TextDoc], **kwargs) -> DocList[TextDoc]::
+#         prompt_template = """Write a concise summary of the following:
+#         "{text}"
+#         CONCISE SUMMARY:"""
+#         prompt = PromptTemplate.from_template(prompt_template)
+
+#         # Define LLM chain
+#         llm_chain = LLMChain(llm=llm, prompt=prompt)
+
+#         # Define StuffDocumentsChain
+#         self.stuff_chain = StuffDocumentsChain(llm_chain=llm_chain, document_variable_name="text")
+    
+
+
+#         doc = [Document(page_content=docs[0].text)]
+#         summary = self.stuff_chain.invoke(doc)['output_text']
+#         responses = DocList[TextDoc]()
+#         response = TextDoc(text=summary)
+#         responses.append(response)
+#         return responses

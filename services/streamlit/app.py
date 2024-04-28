@@ -31,6 +31,32 @@ def autoplay_audio(data):
         unsafe_allow_html=True,
     )
 
+def send_for_summarization_jd(text):
+    # Assuming FastAPI is running on localhost and port 8000
+    url = "http://localhost:8000/summarize_jd"
+    try:
+        response = requests.post(url, json={"text": text})
+        if response.status_code == 200:
+            return response.json()['summary']
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"Network error: {str(e)}"
+
+def send_for_summarization_resume(text):
+    # Assuming FastAPI is running on localhost and port 8000
+    url = "http://localhost:8000/summarize_resume"
+    try:
+        response = requests.post(url, json={"text": text})
+        if response.status_code == 200:
+            return response.json()['summary']
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+    except requests.exceptions.RequestException as e:
+        return f"Network error: {str(e)}"
+
+
+
 # Initialize session state
 if 'page' not in st.session_state:
     st.session_state.page = 'input'
@@ -42,19 +68,23 @@ if st.session_state.page == 'input':
     jd = st.text_area('Copy and paste job description.')
     
     if st.button('Start Session'):
-        st.session_state.resume = ""
+        resume_text = ""
         if resume is not None:
             pdf_reader = PdfReader(resume)
             for page in pdf_reader.pages:
-                st.session_state.resume += page.extract_text()
-        st.session_state.jd = jd
+                resume_text += page.extract_text() or " "  # Handle pages with no text
+        st.session_state.resume_summary = send_for_summarization_resume(resume_text)
+        st.session_state.jd_summary = send_for_summarization_jd(jd)
         st.session_state.page = 'conversation'
+
 
 # Page for conversation with virtual assistant
 if st.session_state.page == 'conversation':
     st.title("RehearsAI Testing: Talking Voice Assistant")
-    # st.write("PDF Text Extracted: ", st.session_state.pdf_text)
-    # st.write("Job Description: ", st.session_state.jd)
+    st.subheader("Summarized Job Description:")
+    st.write(st.session_state.jd_summary)
+    st.subheader("Summarized PDF Text:")
+    st.write(st.session_state.resume_summary)
 
     audio_bytes = audio_recorder()
     if audio_bytes:

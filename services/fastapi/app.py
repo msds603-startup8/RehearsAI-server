@@ -9,6 +9,16 @@ from langchain_openai import ChatOpenAI
 from fastapi.responses import FileResponse
 from fastapi import FastAPI, Request, Depends
 
+from langchain.chains import LLMChain
+from langchain import PromptTemplate
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+import uvicorn
+
+from fastapi import FastAPI, Request, Depends
+from pydantic import BaseModel
 
 openai_api_key = os.environ["OPENAI_API_KEY"]
 
@@ -32,6 +42,7 @@ answer_prompt = ChatPromptTemplate(messages=
 async def parse_body(request: Request):
     data: bytes = await request.body()
     return data
+
 
 @app.post("/answer")
 async def interview(data: bytes = Depends(parse_body)):
@@ -63,3 +74,35 @@ async def interview(data: bytes = Depends(parse_body)):
             stt_response.stream_to_file(output_path)
 
     return FileResponse(output_path)
+
+
+class SummarizeRequest(BaseModel):
+    text: str
+
+
+@app.post("/summarize_resume")
+def summarize_resume(request: SummarizeRequest):
+    prompt_template = """Write a concise summary of following resume. Try to mainly focus on work experience (Employment) and projects:
+    "{text}"
+    CONCISE SUMMARY:"""
+    prompt=PromptTemplate(
+    input_variables=['text'],
+    template=prompt_template
+)
+    llm_chain=LLMChain(llm=langchain_client, prompt=prompt)
+    summary=llm_chain.run({'text':request.text})
+    return {"summary": summary}
+
+
+@app.post("/summarize_jd")
+def summarize_jd(request: SummarizeRequest):
+    prompt_template = """Write a concise summary of following job description:
+    "{text}"
+    CONCISE SUMMARY:"""
+    prompt=PromptTemplate(
+    input_variables=['text'],
+    template=prompt_template
+)
+    llm_chain=LLMChain(llm=langchain_client, prompt=prompt)
+    summary=llm_chain.run({'text':request.text})
+    return {"summary": summary}

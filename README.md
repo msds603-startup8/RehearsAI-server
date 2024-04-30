@@ -17,7 +17,10 @@
 ```
 
 ## Demo
-https://github.com/msds603-startup8/RehearsAI-server/assets/137837017/f50e774e-0ea1-416e-8b0b-52002fa40394
+
+
+https://github.com/msds603-startup8/RehearsAI-server/assets/137837017/b0e32a40-1a4b-47dd-b729-7102827b0179
+
 
 
 ## Quick Start

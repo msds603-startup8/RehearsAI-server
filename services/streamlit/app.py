@@ -58,22 +58,20 @@ if st.session_state.page == 'input':
             pdf_reader = PdfReader(resume)
             for page in pdf_reader.pages:
                 resume_text += page.extract_text() or " "  # Handle pages with no text
-        st.session_state.resume = resume_text
-        st.session_state.job_description = jd
         st.session_state.resume_summary = send_for_summarization_resume(resume_text)
         st.session_state.job_desc_summary = send_for_summarization_jd(jd)
 
         interview_context_data = {
-            "resume": st.session_state.resume,
-            "job_description": st.session_state.job_description
+            "resume": resume_text,
+            "job_description": jd
         }
 
         # Send InterviewContext to the server
         response = requests.post(
             f"http://{args.host}:8000/create_question",
             json={
-                "resume": st.session_state.resume,
-                "job_description": st.session_state.job_description
+                "resume": resume_text,
+                "job_description": jd
             },
             headers={'Content-Type': 'application/json'}
         )
@@ -81,10 +79,9 @@ if st.session_state.page == 'input':
         
         if response.ok:
             response_data = json.loads(response.content.decode('utf-8'))
-            questions_list = response_data.split('\n\n')
             st.session_state.page = 'conversation'
             st.success("Session started successfully!")
-            st.session_state.questions = questions_list
+            st.session_state.questions = [response_data]
         else:
             st.error("Failed to start session.")
 
@@ -100,8 +97,8 @@ if st.session_state.page == 'conversation':
             json={
                 "interviewee_audio_data": base64.b64encode(audio_bytes).decode('utf-8'),
                 "chat_history": st.session_state.chat_history,
-                "job_description": st.session_state.job_description,
-                "resume": st.session_state.resume,
+                "job_description": st.session_state.job_desc_summary,
+                "resume": st.session_state.resume_summary,
                 "questions": st.session_state.questions
             },
             headers={'Content-Type': 'application/json'}

@@ -2,32 +2,24 @@ import os
 import base64
 from typing import List, Tuple
 
-from openai import OpenAI
-
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain.chains.llm import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+
+from pydantic import BaseModel
+
+import openai
 
 from fastapi import FastAPI
 
-from pydantic import BaseModel
-
-from langchain.chains import LLMChain
-from langchain import PromptTemplate
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
-import uvicorn
-import openai
-
-from fastapi import FastAPI, Request, Depends
-from pydantic import BaseModel
 
 openai_api_key = os.environ["OPENAI_API_KEY"]
 
 app = FastAPI()
 
-openai_client = OpenAI(api_key=openai_api_key)
+openai_client = openai.OpenAI(api_key=openai_api_key)
 langchain_client = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5, openai_api_key=openai_api_key)
 
 questions_template_zero_shot="""
@@ -107,8 +99,8 @@ answer_prompt = ChatPromptTemplate.from_messages(
         and give follow-up questions or the next question. 
 
         You have the interviewee's resume and the job description summary:
-        - Job Description: {job_desc_summary}
-        - Resume Highlights: {resume_summary}
+        - Job Description: {job_description}
+        - Resume Highlights: {resume}
 
         Also note that after a followup question you may choose to ask a new question.
 
@@ -131,7 +123,7 @@ answer_prompt = ChatPromptTemplate.from_messages(
 )
 
 class InterviewContext(BaseModel):
-    interviewee_audio_data: str
+    interviewee_audio_data: str = None
     chat_history: List[Tuple[str, str]] = None
     resume: str = None
     job_description: str = None
@@ -164,8 +156,8 @@ async def interview(context: InterviewContext):
     # Language Model
     chain = answer_prompt | langchain_client
     interviewer_text = chain.invoke({'input': interviewee_text, 'chat_history': context.chat_history,\
-                                      'job_desc_summary': context.job_desc_summary, \
-                                        'resume_summary': context.resume_summary,
+                                      'job_description': context.job_description, \
+                                        'resume': context.resume,
                                         'questions': context.questions}).content
 
     # Dictate Model
@@ -222,19 +214,13 @@ class Questions(BaseModel):
 @app.post("/create_question")
 def create_questions(context: InterviewContext):
     """Method to make question using resume and job description calling the openai api"""
-    prompt_zero_shot = PromptTemplate(
-        template=questions_template_zero_shot,
-        input_variables=["resume_text","job_description"],
-        )
-    formatted_prompt_zero_shot = prompt_zero_shot.format(resume_text=context.resume, job_description=context.job_description)
-    messages = [{
-    "role": "system",
-    "content": formatted_prompt_zero_shot
-    }]  
-    response = openai.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=messages,
-            temperature=0,
-    )
-    questions = response.choices[0].message.content
+    prompt = ChatPromptTemplate.from_messages(messages=[
+        ('system', questions_template_zero_shot)
+    ])
+
+    chain = prompt | langchain_client | JsonOutputParser()
+    questions = chain.invoke({
+        'resume_text' : context.resume,
+        'job_description' : context.job_description
+    })
     return questions

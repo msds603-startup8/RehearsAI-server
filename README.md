@@ -7,7 +7,6 @@
 ```
 🌳 project
 ├── README.md
-├── run_demo.sh
 ├── services
 │   ├── fastapi
 │   │   ├── Dockerfile
@@ -42,10 +41,10 @@ https://github.com/msds603-startup8/RehearsAI-server/assets/137837017/f50e774e-0
    - Launch both the Streamlit and FastAPI servers:
 ```console
 # Streamlit server
-(streamlit) streamlit run ./services/streamlit/app.py
+(streamlit) cd services/streamlit; streamlit run app.py
 
 # FastAPI server
-(fastapi) uvicorn services.fastapi.app:app --port 8000
+(fastapi) uvicorn services.fastapi.app:app --port 8000 --reload
 ```
 
 ### Docker Container Setup

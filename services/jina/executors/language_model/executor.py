@@ -41,12 +41,7 @@ class OpenAISingleTurnLanguageModel(Executor):
             ]
         )
 
-    @requests(on='/initialize_session')
-    async def initialize(self, parameters: Dict, **kwargs):
-        # Use parameters to set up any necessary state or preload models
-        self.context = parameters.get('context')
-
-    @requests(on='/process_audio')
+    @requests
     async def task(self, doc: Dialog, **kwargs) -> Dialog:
         chain = self.prompt | self.model
         result = chain.invoke({'input': doc.interviewee_text})

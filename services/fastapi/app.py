@@ -183,9 +183,9 @@ def create_questions(context: InterviewContext):
         ('system', questions_template_zero_shot)
     ])
 
-    chain = prompt | langchain_client | JsonOutputParser()
+    chain = prompt | langchain_client
     questions = chain.invoke({
         'resume_text' : context.resume,
         'job_description' : context.job_description
     })
-    return questions
+    return questions.content

@@ -1,4 +1,3 @@
-from typing import List, Dict
 import base64
 import argparse
 
@@ -11,12 +10,15 @@ import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 
 
-parser = argparse.ArgumentParser(description='Example script with a host argument')
-parser.add_argument('--host', default='0.0.0.0', required=False, help='The host address to connect to')
+parser = argparse.ArgumentParser(
+    description='Example script with a host argument')
+parser.add_argument('--host', default='0.0.0.0', required=False,
+                    help='The host address to connect to')
 args = parser.parse_args()
 
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
+
 
 def send_for_summarization_jd(text):
     # Assuming FastAPI is running on localhost and port 8000
@@ -30,6 +32,7 @@ def send_for_summarization_jd(text):
     except requests.exceptions.RequestException as e:
         return f"Network error: {str(e)}"
 
+
 def send_for_summarization_resume(text):
     # Assuming FastAPI is running on localhost and port 8000
     url = "http://localhost:8000/summarize_resume"
@@ -42,9 +45,11 @@ def send_for_summarization_resume(text):
     except requests.exceptions.RequestException as e:
         return f"Network error: {str(e)}"
 
+
 # Initialize session state
 if 'page' not in st.session_state:
     st.session_state.page = 'input'
+
 
 # Page to collect PDF and text input
 if st.session_state.page == 'input':
@@ -57,8 +62,10 @@ if st.session_state.page == 'input':
         if resume is not None:
             pdf_reader = PdfReader(resume)
             for page in pdf_reader.pages:
-                resume_text += page.extract_text() or " "  # Handle pages with no text
-        st.session_state.resume_summary = send_for_summarization_resume(resume_text)
+                resume_text += page.extract_text() or " "
+                # Handle pages with no text
+        st.session_state.resume_summary = send_for_summarization_resume(
+            resume_text)
         st.session_state.job_desc_summary = send_for_summarization_jd(jd)
 
         interview_context_data = {
@@ -75,8 +82,6 @@ if st.session_state.page == 'input':
             },
             headers={'Content-Type': 'application/json'}
         )
-
-        
         if response.ok:
             response_data = json.loads(response.content.decode('utf-8'))
             st.session_state.page = 'conversation'
@@ -95,7 +100,8 @@ if st.session_state.page == 'conversation':
         response = requests.post(
             f"http://{args.host}:8000/answer",
             json={
-                "interviewee_audio_data": base64.b64encode(audio_bytes).decode('utf-8'),
+                "interviewee_audio_data": base64.b64encode(audio_bytes)
+                                                .decode('utf-8'),
                 "chat_history": st.session_state.chat_history,
                 "job_description": st.session_state.job_desc_summary,
                 "resume": st.session_state.resume_summary,

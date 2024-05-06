@@ -1,4 +1,4 @@
-import os 
+import os
 from jina import Flow
 
 # https://github.com/jina-ai/jina/issues/3025

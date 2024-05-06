@@ -140,7 +140,7 @@ async def interview(context: InterviewContext):
         'chat_history': context.chat_history,
         'job_description': context.job_description,
         'resume': context.resume,
-        'questions': context.Questions
+        'questions': context.questions
         }).content
 
     # Dictate Model
